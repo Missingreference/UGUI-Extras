@@ -9,8 +9,8 @@
     "url": "https://www.elanetic.net"
   },
   "dependencies": {
-    "com.unity.ugui": "",
-    "com.unity.textmeshpro": "",
-    "com.elanetic.coretools": ""
+    "com.unity.ugui": "1.0.0",
+    "com.unity.textmeshpro": "3.0.6",
+    "com.elanetic.coretools": "0.1.0"
   }
 }
