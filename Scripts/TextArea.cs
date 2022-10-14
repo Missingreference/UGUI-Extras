@@ -86,7 +86,7 @@ namespace Elanetic.UI.Unity
                     TextMeshProUGUI textMesh = m_VisibleLines[i];
                     textMesh.fontSize = value;
                     textMesh.rectTransform.offsetMin = new Vector2(1.0f, 0.0f);
-                    textMesh.rectTransform.offsetMax = new Vector2(1.0f, fontSize);
+                    textMesh.rectTransform.offsetMax = new Vector2(-1.0f, fontSize);
                 }
 
                 //Setup font values
@@ -398,7 +398,7 @@ namespace Elanetic.UI.Unity
                 }
             }
 
-            float containerWidth = Mathf.Max(0.01f, rectTransform.rect.width);
+            float containerWidth = Mathf.Max(0.01f, rectTransform.rect.width-2.0f);
             void CreateLine()
             {
                 m_LineStartIndexs.Add(lineStartIndex);
@@ -882,7 +882,7 @@ namespace Elanetic.UI.Unity
 
                 TextMeshProUGUI textMesh = m_VisibleLines[i];
                 textMesh.SetCharArray(m_RawText, lineStartIndex, lineSize);
-                textMesh.rectTransform.anchoredPosition = new Vector2(1.0f, -fontSize * i);
+                textMesh.rectTransform.anchoredPosition = new Vector2(textMesh.rectTransform.anchoredPosition.x, -fontSize * i);
 
                 if (lineSize <= 0) continue; //Without this check calling textMesh.UpdateVertexData pushes old data to the shader
 
@@ -933,7 +933,7 @@ namespace Elanetic.UI.Unity
                     m_VisibleLineCount++;
 
                     textMesh.SetCharArray(m_RawText, lineStartIndex, lineSize);
-                    textMesh.rectTransform.anchoredPosition = new Vector2(1.0f, -fontSize * i);
+                    textMesh.rectTransform.anchoredPosition = new Vector2(textMesh.rectTransform.anchoredPosition.x, -fontSize * i);
 
                     if (lineSize == 0) continue; //Without this check calling textMesh.UpdateVertexData pushes old data to the shader
 
@@ -1170,7 +1170,7 @@ namespace Elanetic.UI.Unity
             textMesh.rectTransform.anchorMin = new Vector2(0, 1);
             textMesh.rectTransform.anchorMax = new Vector2(1, 1);
             textMesh.rectTransform.offsetMin = new Vector2(1.0f, 0.0f);
-            textMesh.rectTransform.offsetMax = new Vector2(1.0f, fontSize);
+            textMesh.rectTransform.offsetMax = new Vector2(-1.0f, fontSize);
 
             return textMesh;
         }
@@ -1197,7 +1197,7 @@ namespace Elanetic.UI.Unity
             textMesh.fontSize = fontSize;
             textMesh.color = Color.white;
             textMesh.rectTransform.offsetMin = new Vector2(1.0f, 0.0f);
-            textMesh.rectTransform.offsetMax = new Vector2(1.0f, fontSize);
+            textMesh.rectTransform.offsetMax = new Vector2(-1.0f, fontSize);
 
             m_TextMeshPool.RemoveAt(targetIndex);
             textMesh.gameObject.SetActive(true);
