@@ -1,0 +1,16 @@
+{
+  "name": "com.elanetic.uguiextras",
+  "version": "1.0.0",
+  "displayName": "UGUI Extras",
+  "description": "Various fully implemented UI elements and helpful tools for UGUI.",
+  "author": {
+    "name": "Elanetic",
+    "email": "Isaac@elanetic.net",
+    "url": "https://www.elanetic.net"
+  },
+  "dependencies": {
+    "com.unity.ugui": "",
+    "com.unity.textmeshpro": "",
+    "com.elanetic.coretools": ""
+  }
+}
