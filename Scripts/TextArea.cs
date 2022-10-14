@@ -882,7 +882,7 @@ namespace Elanetic.UI.Unity
 
                 TextMeshProUGUI textMesh = m_VisibleLines[i];
                 textMesh.SetCharArray(m_RawText, lineStartIndex, lineSize);
-                textMesh.rectTransform.anchoredPosition = new Vector2(0, -fontSize * i);
+                textMesh.rectTransform.anchoredPosition = new Vector2(1.0f, -fontSize * i);
 
                 if (lineSize <= 0) continue; //Without this check calling textMesh.UpdateVertexData pushes old data to the shader
 
