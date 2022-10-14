@@ -85,8 +85,8 @@ namespace Elanetic.UI.Unity
                 {
                     TextMeshProUGUI textMesh = m_VisibleLines[i];
                     textMesh.fontSize = value;
-                    textMesh.rectTransform.offsetMin = Vector2.zero;
-                    textMesh.rectTransform.offsetMax = new Vector2(0.0f, fontSize);
+                    textMesh.rectTransform.offsetMin = new Vector2(1.0f, 0.0f);
+                    textMesh.rectTransform.offsetMax = new Vector2(1.0f, fontSize);
                 }
 
                 //Setup font values
@@ -1169,8 +1169,8 @@ namespace Elanetic.UI.Unity
             textMesh.rectTransform.pivot = new Vector2(0.5f, 1.0f);
             textMesh.rectTransform.anchorMin = new Vector2(0, 1);
             textMesh.rectTransform.anchorMax = new Vector2(1, 1);
-            textMesh.rectTransform.offsetMin = Vector2.zero;
-            textMesh.rectTransform.offsetMax = new Vector2(0.0f, fontSize);
+            textMesh.rectTransform.offsetMin = new Vector2(1.0f, 0.0f);
+            textMesh.rectTransform.offsetMax = new Vector2(1.0f, fontSize);
 
             return textMesh;
         }
@@ -1196,8 +1196,8 @@ namespace Elanetic.UI.Unity
             textMesh.font = font;
             textMesh.fontSize = fontSize;
             textMesh.color = Color.white;
-            textMesh.rectTransform.offsetMin = Vector2.zero;
-            textMesh.rectTransform.offsetMax = new Vector2(0.0f, fontSize);
+            textMesh.rectTransform.offsetMin = new Vector2(1.0f, 0.0f);
+            textMesh.rectTransform.offsetMax = new Vector2(1.0f, fontSize);
 
             m_TextMeshPool.RemoveAt(targetIndex);
             textMesh.gameObject.SetActive(true);
