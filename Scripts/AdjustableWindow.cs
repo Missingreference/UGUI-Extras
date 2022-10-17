@@ -9,7 +9,7 @@ using Cursor = Elanetic.Native.Cursor;
 namespace Elanetic.UI.Unity
 {
     [RequireComponent(typeof(RectTransform))]
-    public class AdjustableWindow : UIBehaviour, IDragHandler, IEndDragHandler, IPointerDownHandler, IPointerMoveHandler, IPointerEnterHandler, IPointerExitHandler
+    public class AdjustableWindow : UIBehaviour, IPointerDownHandler, IPointerMoveHandler, IPointerUpHandler, IPointerEnterHandler, IPointerExitHandler, IDragHandler
     {
 
         public Vector2 minSize
@@ -78,9 +78,10 @@ namespace Elanetic.UI.Unity
         private Vector2 m_MinSize = new Vector2(100.0f, 100.0f);
         private float m_AdjustEdgeSize = 10.0f;
         private float m_HalfAdjustEdgeSize = 5.0f;
-        private float m_TopMoveSize = 10.0f;
+        private float m_TopMoveSize = 16.0f;
         private Graphic m_TargetGraphic;
         private RectTransform m_DraggableRect = null;
+        private Vector2 m_StartWindowPosition;
 
         private AdjustWindowState m_State = AdjustWindowState.None;
         private enum AdjustWindowState
@@ -109,7 +110,10 @@ namespace Elanetic.UI.Unity
             draggableRect = transform.parent as RectTransform;
         }
 
-        Vector2 startWindowPosition;
+        protected override void OnEnable()
+        {
+            m_State = AdjustWindowState.None;
+        }
 
         void IPointerDownHandler.OnPointerDown(PointerEventData eventData)
         {
@@ -123,17 +127,17 @@ namespace Elanetic.UI.Unity
                 if(localPosition.x <= min.x + extraCornerAdjustSize)
                 {
                     m_State = AdjustWindowState.TopLeft;
-                    startWindowPosition = new Vector2(rectTransform.rect.width + rectTransform.rect.x + rectTransform.localPosition.x, rectTransform.rect.y + rectTransform.localPosition.y);
+                    m_StartWindowPosition = new Vector2(rectTransform.rect.width + rectTransform.rect.x + rectTransform.localPosition.x, rectTransform.rect.y + rectTransform.localPosition.y);
                 }
                 else if(localPosition.x >= max.x - extraCornerAdjustSize)
                 {
                     m_State = AdjustWindowState.TopRight;
-                    startWindowPosition = new Vector2(rectTransform.rect.x + rectTransform.localPosition.x, rectTransform.rect.y + rectTransform.localPosition.y);
+                    m_StartWindowPosition = new Vector2(rectTransform.rect.x + rectTransform.localPosition.x, rectTransform.rect.y + rectTransform.localPosition.y);
                 }
                 else
                 {
                     m_State = AdjustWindowState.Top;
-                    startWindowPosition = new Vector2(0.0f, rectTransform.rect.y + rectTransform.localPosition.y);
+                    m_StartWindowPosition = new Vector2(0.0f, rectTransform.rect.y + rectTransform.localPosition.y);
                 }
             }
             else if(localPosition.y <= min.y) //Bottom Edge
@@ -141,17 +145,17 @@ namespace Elanetic.UI.Unity
                 if(localPosition.x <= min.x + extraCornerAdjustSize)
                 {
                     m_State = AdjustWindowState.BottomLeft;
-                    startWindowPosition = new Vector2(rectTransform.rect.width + rectTransform.rect.x + rectTransform.localPosition.x, rectTransform.rect.height + rectTransform.rect.y + rectTransform.localPosition.y);
+                    m_StartWindowPosition = new Vector2(rectTransform.rect.width + rectTransform.rect.x + rectTransform.localPosition.x, rectTransform.rect.height + rectTransform.rect.y + rectTransform.localPosition.y);
                 }
                 else if(localPosition.x >= max.x - extraCornerAdjustSize)
                 {
                     m_State = AdjustWindowState.BottomRight;
-                    startWindowPosition = new Vector2(rectTransform.rect.x + rectTransform.localPosition.x, rectTransform.rect.height + rectTransform.rect.y + rectTransform.localPosition.y);
+                    m_StartWindowPosition = new Vector2(rectTransform.rect.x + rectTransform.localPosition.x, rectTransform.rect.height + rectTransform.rect.y + rectTransform.localPosition.y);
                 }
                 else
                 {
                     m_State = AdjustWindowState.Bottom;
-                    startWindowPosition = new Vector2(0.0f, rectTransform.rect.height + rectTransform.rect.y + rectTransform.localPosition.y);
+                    m_StartWindowPosition = new Vector2(0.0f, rectTransform.rect.height + rectTransform.rect.y + rectTransform.localPosition.y);
                 }
             }
             else if(localPosition.x <= min.x) //Left Edge
@@ -159,17 +163,17 @@ namespace Elanetic.UI.Unity
                 if(localPosition.y <= min.y + extraCornerAdjustSize)
                 {
                     m_State = AdjustWindowState.BottomLeft;
-                    startWindowPosition = new Vector2(rectTransform.rect.width + rectTransform.rect.x + rectTransform.localPosition.x, rectTransform.rect.height + rectTransform.rect.y + rectTransform.localPosition.y);
+                    m_StartWindowPosition = new Vector2(rectTransform.rect.width + rectTransform.rect.x + rectTransform.localPosition.x, rectTransform.rect.height + rectTransform.rect.y + rectTransform.localPosition.y);
                 }
                 else if (localPosition.y >= max.y - extraCornerAdjustSize)
                 {
                     m_State = AdjustWindowState.TopLeft;
-                    startWindowPosition = new Vector2(rectTransform.rect.width + rectTransform.rect.x + rectTransform.localPosition.x, rectTransform.rect.y + rectTransform.localPosition.y);
+                    m_StartWindowPosition = new Vector2(rectTransform.rect.width + rectTransform.rect.x + rectTransform.localPosition.x, rectTransform.rect.y + rectTransform.localPosition.y);
                 }
                 else
                 {
                     m_State = AdjustWindowState.Left;
-                    startWindowPosition = new Vector2(rectTransform.rect.width + rectTransform.rect.x + rectTransform.localPosition.x, 0.0f);
+                    m_StartWindowPosition = new Vector2(rectTransform.rect.width + rectTransform.rect.x + rectTransform.localPosition.x, 0.0f);
                 }
             }
             else if(localPosition.x >= max.x) //Right Edge
@@ -177,188 +181,28 @@ namespace Elanetic.UI.Unity
                 if(localPosition.y <= min.y + extraCornerAdjustSize)
                 {
                     m_State = AdjustWindowState.BottomRight;
-                    startWindowPosition = new Vector2(rectTransform.rect.x + rectTransform.localPosition.x, rectTransform.rect.height + rectTransform.rect.y + rectTransform.localPosition.y);
+                    m_StartWindowPosition = new Vector2(rectTransform.rect.x + rectTransform.localPosition.x, rectTransform.rect.height + rectTransform.rect.y + rectTransform.localPosition.y);
                 }
                 else if(localPosition.y >= max.y - extraCornerAdjustSize)
                 {
                     m_State = AdjustWindowState.TopRight;
-                    startWindowPosition = new Vector2(rectTransform.rect.x + rectTransform.localPosition.x, rectTransform.rect.y + rectTransform.localPosition.y);
+                    m_StartWindowPosition = new Vector2(rectTransform.rect.x + rectTransform.localPosition.x, rectTransform.rect.y + rectTransform.localPosition.y);
                 }
                 else
                 {
                     m_State = AdjustWindowState.Right;
-                    startWindowPosition = new Vector2(rectTransform.rect.x + rectTransform.localPosition.x, 0.0f);
+                    m_StartWindowPosition = new Vector2(rectTransform.rect.x + rectTransform.localPosition.x, 0.0f);
                 }
             }
             else if(localPosition.y >= max.y - topMoveSize) //Move
             {
                 m_State = AdjustWindowState.Move;
-                startWindowPosition = rectTransform.localPosition;
+                m_StartWindowPosition = rectTransform.localPosition;
             }
-        }
-
-        void IDragHandler.OnDrag(PointerEventData eventData)
-        {
-            RectTransformUtility.ScreenPointToLocalPointInRectangle(rectTransform, eventData.position, null, out Vector2 localPosition);
-
-            //Note: I'm sure theres a way to do the same thing without a switch statement. A minor optimization as things go.
-            switch (m_State)
+            else
             {
-                case AdjustWindowState.None:
-                    return;
-                case AdjustWindowState.Move:
-                    RectTransformUtility.ScreenPointToLocalPointInRectangle(rectTransform, eventData.pressPosition, null, out Vector2 localPressPosition);
-                    rectTransform.localPosition = startWindowPosition - (localPressPosition - localPosition);
-                    return;
-                case AdjustWindowState.Left:
-
-                    float targetSize = Mathf.Max(startWindowPosition.x - (localPosition.x + rectTransform.localPosition.x), m_MinSize.x);
-                    float parentSize = 0.0f;
-                    RectTransform parentRectTransform = rectTransform.parent as RectTransform;
-                    if (rectTransform != null)
-                    {
-                        parentSize = parentRectTransform.rect.width;
-                    }
-                    rectTransform.sizeDelta = new Vector2(targetSize - parentSize * (rectTransform.anchorMax.x - rectTransform.anchorMin.x), rectTransform.sizeDelta.y);
-
-                    Cursor.SetResizeLeftRightCursor();
-
-                    rectTransform.localPosition = new Vector3(-(rectTransform.rect.position.x + rectTransform.rect.width) + startWindowPosition.x, rectTransform.localPosition.y, rectTransform.localPosition.z);
-                    return;
-                case AdjustWindowState.Right:
-                    targetSize = Mathf.Max((localPosition.x + rectTransform.localPosition.x) -startWindowPosition.x, m_MinSize.x);
-                    parentSize = 0.0f;
-                    parentRectTransform = rectTransform.parent as RectTransform;
-                    if (rectTransform != null)
-                    {
-                        parentSize = parentRectTransform.rect.width;
-                    }
-                    rectTransform.sizeDelta = new Vector2(targetSize - parentSize * (rectTransform.anchorMax.x - rectTransform.anchorMin.x), rectTransform.sizeDelta.y);
-
-                    Cursor.SetResizeLeftRightCursor();
-
-                    rectTransform.localPosition = new Vector3(-(rectTransform.rect.position.x) + startWindowPosition.x, rectTransform.localPosition.y, rectTransform.localPosition.z);
-                    return;
-                case AdjustWindowState.Top:
-                    targetSize = Mathf.Max((localPosition.y + rectTransform.localPosition.y) - startWindowPosition.y, m_MinSize.y);
-                    parentSize = 0.0f;
-                    parentRectTransform = rectTransform.parent as RectTransform;
-                    if (rectTransform != null)
-                    {
-                        parentSize = parentRectTransform.rect.height;
-                    }
-                    rectTransform.sizeDelta = new Vector2(rectTransform.sizeDelta.x, targetSize - parentSize * (rectTransform.anchorMax.y - rectTransform.anchorMin.y));
-
-                    Cursor.SetResizeUpDownCursor();
-
-                    rectTransform.localPosition = new Vector3(rectTransform.localPosition.x, -(rectTransform.rect.position.y) + startWindowPosition.y, rectTransform.localPosition.z);
-
-                    return;
-                case AdjustWindowState.Bottom:
-                    targetSize = Mathf.Max(startWindowPosition.y - (localPosition.y + rectTransform.localPosition.y), m_MinSize.y);
-                    parentSize = 0.0f;
-                    parentRectTransform = rectTransform.parent as RectTransform;
-                    if (rectTransform != null)
-                    {
-                        parentSize = parentRectTransform.rect.height;
-                    }
-                    rectTransform.sizeDelta = new Vector2(rectTransform.sizeDelta.x, targetSize - parentSize * (rectTransform.anchorMax.y - rectTransform.anchorMin.y));
-
-                    Cursor.SetResizeUpDownCursor();
-
-                    rectTransform.localPosition = new Vector3(rectTransform.localPosition.x, -(rectTransform.rect.position.y + rectTransform.rect.height) + startWindowPosition.y, rectTransform.localPosition.z);
-                    return;
-                case AdjustWindowState.TopLeft:
-                    float targetWidth = Mathf.Max(startWindowPosition.x - (localPosition.x + rectTransform.localPosition.x), m_MinSize.x);
-                    float targetHeight = Mathf.Max((localPosition.y + rectTransform.localPosition.y) - startWindowPosition.y, m_MinSize.y);
-                    Vector2 parentSizes = Vector2.zero;
-                    parentRectTransform = rectTransform.parent as RectTransform;
-                    if (rectTransform != null)
-                    {
-                        parentSizes = parentRectTransform.rect.size;
-                    }
-                    rectTransform.sizeDelta = new Vector2(targetWidth - parentSizes.x * (rectTransform.anchorMax.x - rectTransform.anchorMin.x), targetHeight - parentSizes.y * (rectTransform.anchorMax.y - rectTransform.anchorMin.y));
-
-                    Cursor.SetResizeTLBRCursor();
-
-                    rectTransform.localPosition = new Vector3(-(rectTransform.rect.position.x + rectTransform.rect.width) + startWindowPosition.x, -(rectTransform.rect.position.y) + startWindowPosition.y, rectTransform.localPosition.z);
-                    return;
-                case AdjustWindowState.TopRight:
-                    targetWidth = Mathf.Max((localPosition.x + rectTransform.localPosition.x) - startWindowPosition.x, m_MinSize.x);
-                    targetHeight = Mathf.Max((localPosition.y + rectTransform.localPosition.y) - startWindowPosition.y, m_MinSize.y);
-                    parentSizes = Vector2.zero;
-                    parentRectTransform = rectTransform.parent as RectTransform;
-                    if (rectTransform != null)
-                    {
-                        parentSizes = parentRectTransform.rect.size;
-                    }
-                    rectTransform.sizeDelta = new Vector2(targetWidth - parentSizes.x * (rectTransform.anchorMax.x - rectTransform.anchorMin.x), targetHeight - parentSizes.y * (rectTransform.anchorMax.y - rectTransform.anchorMin.y));
-
-                    Cursor.SetResizeTRBLCursor();
-
-                    rectTransform.localPosition = new Vector3(-(rectTransform.rect.position.x) + startWindowPosition.x, -(rectTransform.rect.position.y) + startWindowPosition.y, rectTransform.localPosition.z);
-                    return;
-                case AdjustWindowState.BottomLeft:
-                    targetWidth = Mathf.Max(startWindowPosition.x - (localPosition.x + rectTransform.localPosition.x), m_MinSize.x);
-                    targetHeight = Mathf.Max(startWindowPosition.y - (localPosition.y + rectTransform.localPosition.y), m_MinSize.y);
-                    parentSizes = Vector2.zero;
-                    parentRectTransform = rectTransform.parent as RectTransform;
-                    if (rectTransform != null)
-                    {
-                        parentSizes = parentRectTransform.rect.size;
-                    }
-                    rectTransform.sizeDelta = new Vector2(targetWidth - parentSizes.x * (rectTransform.anchorMax.x - rectTransform.anchorMin.x), targetHeight - parentSizes.y * (rectTransform.anchorMax.y - rectTransform.anchorMin.y));
-
-                    Cursor.SetResizeTRBLCursor();
-
-                    rectTransform.localPosition = new Vector3(-(rectTransform.rect.position.x + rectTransform.rect.width) + startWindowPosition.x, -(rectTransform.rect.position.y + rectTransform.rect.height) + startWindowPosition.y, rectTransform.localPosition.z);
-                    return;
-                case AdjustWindowState.BottomRight:
-                    targetWidth = Mathf.Max((localPosition.x + rectTransform.localPosition.x) - startWindowPosition.x, m_MinSize.x);
-                    targetHeight = Mathf.Max(startWindowPosition.y - (localPosition.y + rectTransform.localPosition.y), m_MinSize.y);
-                    parentSizes = Vector2.zero;
-                    parentRectTransform = rectTransform.parent as RectTransform;
-                    if (rectTransform != null)
-                    {
-                        parentSizes = parentRectTransform.rect.size;
-                    }
-                    rectTransform.sizeDelta = new Vector2(targetWidth - parentSizes.x * (rectTransform.anchorMax.x - rectTransform.anchorMin.x), targetHeight - parentSizes.y * (rectTransform.anchorMax.y - rectTransform.anchorMin.y));
-
-                    Cursor.SetResizeTLBRCursor();
-
-                    rectTransform.localPosition = new Vector3(-(rectTransform.rect.position.x) + startWindowPosition.x, -(rectTransform.rect.position.y + rectTransform.rect.height) + startWindowPosition.y, rectTransform.localPosition.z);
-                    return;
+                m_State = AdjustWindowState.None;
             }
-        }
-
-        private Vector2 ParentLocalToLocal(Vector2 point)
-        {
-            return point - (Vector2)rectTransform.localPosition;
-        }
-
-        private Vector2 LocalToParentLocal(Vector2 point)
-        {
-            return point + (Vector2)rectTransform.localPosition;
-        }
-
-        private Vector2 RectToLocal(Vector2 point)
-        {
-            return point + rectTransform.rect.position;
-        }
-
-        private Vector2 LocalToRect(Vector2 point)
-        {
-            return point - rectTransform.rect.position;
-        }
-
-        private Vector2 ParentLocalToRect(Vector2 point)
-        {
-            return LocalToRect(ParentLocalToLocal(point));
-        }
-
-        void IEndDragHandler.OnEndDrag(PointerEventData eventData)
-        {
-            EndDrag();
         }
 
         private void EndDrag()
@@ -369,77 +213,214 @@ namespace Elanetic.UI.Unity
             FixWindowViewAlignment();
         }
 
+        private void UpdatePointerState(Vector2 pointerPosition, Vector2 pressPosition)
+        {
+            RectTransformUtility.ScreenPointToLocalPointInRectangle(rectTransform, pointerPosition, null, out Vector2 localPosition);
+
+            //Note: I'm sure theres a way to do the same thing without a switch statement. A minor optimization as things go.
+            switch(m_State)
+            {
+                case AdjustWindowState.None:
+                    Vector2 min = new Vector2(rectTransform.rect.x + m_HalfAdjustEdgeSize, rectTransform.rect.y + m_HalfAdjustEdgeSize);
+                    Vector2 max = new Vector2(rectTransform.rect.x + rectTransform.rect.width - m_HalfAdjustEdgeSize, rectTransform.rect.y + rectTransform.rect.height - m_HalfAdjustEdgeSize);
+
+                    if(localPosition.y >= max.y) //Top Edge
+                    {
+                        if(localPosition.x <= min.x + extraCornerAdjustSize)
+                        {
+                            Cursor.SetResizeTLBRCursor();
+                        }
+                        else if(localPosition.x >= max.x - extraCornerAdjustSize)
+                        {
+                            Cursor.SetResizeTRBLCursor();
+                        }
+                        else
+                        {
+                            Cursor.SetResizeUpDownCursor();
+                        }
+                    }
+                    else if(localPosition.y <= min.y) //Bottom Edge
+                    {
+                        if(localPosition.x <= min.x + extraCornerAdjustSize)
+                        {
+                            Cursor.SetResizeTRBLCursor();
+                        }
+                        else if(localPosition.x >= max.x - extraCornerAdjustSize)
+                        {
+                            Cursor.SetResizeTLBRCursor();
+                        }
+                        else
+                        {
+                            Cursor.SetResizeUpDownCursor();
+                        }
+                    }
+                    else if(localPosition.x <= min.x) //Left Edge
+                    {
+                        if(localPosition.y <= min.y + extraCornerAdjustSize)
+                        {
+                            Cursor.SetResizeTRBLCursor();
+                        }
+                        else if(localPosition.y >= max.y - extraCornerAdjustSize)
+                        {
+                            Cursor.SetResizeTLBRCursor();
+                        }
+                        else
+                        {
+                            Cursor.SetResizeLeftRightCursor();
+                        }
+                    }
+                    else if(localPosition.x >= max.x) //Right Edge
+                    {
+                        if(localPosition.y <= min.y + extraCornerAdjustSize)
+                        {
+                            Cursor.SetResizeTLBRCursor();
+                        }
+                        else if(localPosition.y >= max.y - extraCornerAdjustSize)
+                        {
+                            Cursor.SetResizeTRBLCursor();
+                        }
+                        else
+                        {
+                            Cursor.SetResizeLeftRightCursor();
+                        }
+                    }
+                    else
+                    {
+                        Cursor.SetArrowCursor();
+                    }
+                    return;
+                case AdjustWindowState.Move:
+                    RectTransformUtility.ScreenPointToLocalPointInRectangle(rectTransform, pressPosition, null, out Vector2 localPressPosition);
+                    rectTransform.localPosition = m_StartWindowPosition - (localPressPosition - localPosition);
+                    return;
+                case AdjustWindowState.Left:
+
+                    float targetSize = Mathf.Max(m_StartWindowPosition.x - (localPosition.x + rectTransform.localPosition.x), m_MinSize.x);
+                    float parentSize = 0.0f;
+                    RectTransform parentRectTransform = rectTransform.parent as RectTransform;
+                    if(rectTransform != null)
+                    {
+                        parentSize = parentRectTransform.rect.width;
+                    }
+                    rectTransform.sizeDelta = new Vector2(targetSize - parentSize * (rectTransform.anchorMax.x - rectTransform.anchorMin.x), rectTransform.sizeDelta.y);
+
+                    Cursor.SetResizeLeftRightCursor();
+
+                    rectTransform.localPosition = new Vector3(-(rectTransform.rect.position.x + rectTransform.rect.width) + m_StartWindowPosition.x, rectTransform.localPosition.y, rectTransform.localPosition.z);
+                    return;
+                case AdjustWindowState.Right:
+                    targetSize = Mathf.Max((localPosition.x + rectTransform.localPosition.x) - m_StartWindowPosition.x, m_MinSize.x);
+                    parentSize = 0.0f;
+                    parentRectTransform = rectTransform.parent as RectTransform;
+                    if(rectTransform != null)
+                    {
+                        parentSize = parentRectTransform.rect.width;
+                    }
+                    rectTransform.sizeDelta = new Vector2(targetSize - parentSize * (rectTransform.anchorMax.x - rectTransform.anchorMin.x), rectTransform.sizeDelta.y);
+
+                    Cursor.SetResizeLeftRightCursor();
+
+                    rectTransform.localPosition = new Vector3(-(rectTransform.rect.position.x) + m_StartWindowPosition.x, rectTransform.localPosition.y, rectTransform.localPosition.z);
+                    return;
+                case AdjustWindowState.Top:
+                    targetSize = Mathf.Max((localPosition.y + rectTransform.localPosition.y) - m_StartWindowPosition.y, m_MinSize.y);
+                    parentSize = 0.0f;
+                    parentRectTransform = rectTransform.parent as RectTransform;
+                    if(rectTransform != null)
+                    {
+                        parentSize = parentRectTransform.rect.height;
+                    }
+                    rectTransform.sizeDelta = new Vector2(rectTransform.sizeDelta.x, targetSize - parentSize * (rectTransform.anchorMax.y - rectTransform.anchorMin.y));
+
+                    Cursor.SetResizeUpDownCursor();
+
+                    rectTransform.localPosition = new Vector3(rectTransform.localPosition.x, -(rectTransform.rect.position.y) + m_StartWindowPosition.y, rectTransform.localPosition.z);
+
+                    return;
+                case AdjustWindowState.Bottom:
+                    targetSize = Mathf.Max(m_StartWindowPosition.y - (localPosition.y + rectTransform.localPosition.y), m_MinSize.y);
+                    parentSize = 0.0f;
+                    parentRectTransform = rectTransform.parent as RectTransform;
+                    if(rectTransform != null)
+                    {
+                        parentSize = parentRectTransform.rect.height;
+                    }
+                    rectTransform.sizeDelta = new Vector2(rectTransform.sizeDelta.x, targetSize - parentSize * (rectTransform.anchorMax.y - rectTransform.anchorMin.y));
+
+                    Cursor.SetResizeUpDownCursor();
+
+                    rectTransform.localPosition = new Vector3(rectTransform.localPosition.x, -(rectTransform.rect.position.y + rectTransform.rect.height) + m_StartWindowPosition.y, rectTransform.localPosition.z);
+                    return;
+                case AdjustWindowState.TopLeft:
+                    float targetWidth = Mathf.Max(m_StartWindowPosition.x - (localPosition.x + rectTransform.localPosition.x), m_MinSize.x);
+                    float targetHeight = Mathf.Max((localPosition.y + rectTransform.localPosition.y) - m_StartWindowPosition.y, m_MinSize.y);
+                    Vector2 parentSizes = Vector2.zero;
+                    parentRectTransform = rectTransform.parent as RectTransform;
+                    if(rectTransform != null)
+                    {
+                        parentSizes = parentRectTransform.rect.size;
+                    }
+                    rectTransform.sizeDelta = new Vector2(targetWidth - parentSizes.x * (rectTransform.anchorMax.x - rectTransform.anchorMin.x), targetHeight - parentSizes.y * (rectTransform.anchorMax.y - rectTransform.anchorMin.y));
+
+                    Cursor.SetResizeTLBRCursor();
+
+                    rectTransform.localPosition = new Vector3(-(rectTransform.rect.position.x + rectTransform.rect.width) + m_StartWindowPosition.x, -(rectTransform.rect.position.y) + m_StartWindowPosition.y, rectTransform.localPosition.z);
+                    return;
+                case AdjustWindowState.TopRight:
+                    targetWidth = Mathf.Max((localPosition.x + rectTransform.localPosition.x) - m_StartWindowPosition.x, m_MinSize.x);
+                    targetHeight = Mathf.Max((localPosition.y + rectTransform.localPosition.y) - m_StartWindowPosition.y, m_MinSize.y);
+                    parentSizes = Vector2.zero;
+                    parentRectTransform = rectTransform.parent as RectTransform;
+                    if(rectTransform != null)
+                    {
+                        parentSizes = parentRectTransform.rect.size;
+                    }
+                    rectTransform.sizeDelta = new Vector2(targetWidth - parentSizes.x * (rectTransform.anchorMax.x - rectTransform.anchorMin.x), targetHeight - parentSizes.y * (rectTransform.anchorMax.y - rectTransform.anchorMin.y));
+
+                    Cursor.SetResizeTRBLCursor();
+
+                    rectTransform.localPosition = new Vector3(-(rectTransform.rect.position.x) + m_StartWindowPosition.x, -(rectTransform.rect.position.y) + m_StartWindowPosition.y, rectTransform.localPosition.z);
+                    return;
+                case AdjustWindowState.BottomLeft:
+                    targetWidth = Mathf.Max(m_StartWindowPosition.x - (localPosition.x + rectTransform.localPosition.x), m_MinSize.x);
+                    targetHeight = Mathf.Max(m_StartWindowPosition.y - (localPosition.y + rectTransform.localPosition.y), m_MinSize.y);
+                    parentSizes = Vector2.zero;
+                    parentRectTransform = rectTransform.parent as RectTransform;
+                    if(rectTransform != null)
+                    {
+                        parentSizes = parentRectTransform.rect.size;
+                    }
+                    rectTransform.sizeDelta = new Vector2(targetWidth - parentSizes.x * (rectTransform.anchorMax.x - rectTransform.anchorMin.x), targetHeight - parentSizes.y * (rectTransform.anchorMax.y - rectTransform.anchorMin.y));
+
+                    Cursor.SetResizeTRBLCursor();
+
+                    rectTransform.localPosition = new Vector3(-(rectTransform.rect.position.x + rectTransform.rect.width) + m_StartWindowPosition.x, -(rectTransform.rect.position.y + rectTransform.rect.height) + m_StartWindowPosition.y, rectTransform.localPosition.z);
+                    return;
+                case AdjustWindowState.BottomRight:
+                    targetWidth = Mathf.Max((localPosition.x + rectTransform.localPosition.x) - m_StartWindowPosition.x, m_MinSize.x);
+                    targetHeight = Mathf.Max(m_StartWindowPosition.y - (localPosition.y + rectTransform.localPosition.y), m_MinSize.y);
+                    parentSizes = Vector2.zero;
+                    parentRectTransform = rectTransform.parent as RectTransform;
+                    if(rectTransform != null)
+                    {
+                        parentSizes = parentRectTransform.rect.size;
+                    }
+                    rectTransform.sizeDelta = new Vector2(targetWidth - parentSizes.x * (rectTransform.anchorMax.x - rectTransform.anchorMin.x), targetHeight - parentSizes.y * (rectTransform.anchorMax.y - rectTransform.anchorMin.y));
+
+                    Cursor.SetResizeTLBRCursor();
+
+                    rectTransform.localPosition = new Vector3(-(rectTransform.rect.position.x) + m_StartWindowPosition.x, -(rectTransform.rect.position.y + rectTransform.rect.height) + m_StartWindowPosition.y, rectTransform.localPosition.z);
+                    return;
+            }
+        }
+
         void IPointerMoveHandler.OnPointerMove(PointerEventData eventData)
         {
-            RectTransformUtility.ScreenPointToLocalPointInRectangle(rectTransform, eventData.position, null, out Vector2 localPosition);
-
-            Vector2 min = new Vector2(rectTransform.rect.x + m_HalfAdjustEdgeSize, rectTransform.rect.y + m_HalfAdjustEdgeSize);
-            Vector2 max = new Vector2(rectTransform.rect.x + rectTransform.rect.width - m_HalfAdjustEdgeSize, rectTransform.rect.y + rectTransform.rect.height - m_HalfAdjustEdgeSize);
-
-            if (localPosition.y >= max.y) //Top Edge
-            {
-                if (localPosition.x <= min.x + extraCornerAdjustSize)
-                {
-                    Cursor.SetResizeTLBRCursor();
-                }
-                else if (localPosition.x >= max.x - extraCornerAdjustSize)
-                {
-                    Cursor.SetResizeTRBLCursor();
-                }
-                else
-                {
-                    Cursor.SetResizeUpDownCursor();
-                }
-            }
-            else if (localPosition.y <= min.y) //Bottom Edge
-            {
-                if (localPosition.x <= min.x + extraCornerAdjustSize)
-                {
-                    Cursor.SetResizeTRBLCursor();
-                }
-                else if (localPosition.x >= max.x - extraCornerAdjustSize)
-                {
-                    Cursor.SetResizeTLBRCursor();
-                }
-                else
-                {
-                    Cursor.SetResizeUpDownCursor();
-                }
-            }
-            else if (localPosition.x <= min.x) //Left Edge
-            {
-                if(localPosition.y <= min.y + extraCornerAdjustSize)
-                {
-                    Cursor.SetResizeTRBLCursor();
-                }
-                else if(localPosition.y >= max.y - extraCornerAdjustSize)
-                {
-                    Cursor.SetResizeTLBRCursor();
-                }
-                else
-                {
-                    Cursor.SetResizeLeftRightCursor();
-                }
-            }
-            else if (localPosition.x >= max.x) //Right Edge
-            {
-                if (localPosition.y <= min.y + extraCornerAdjustSize)
-                {
-                    Cursor.SetResizeTLBRCursor();
-                }
-                else if (localPosition.y >= max.y - extraCornerAdjustSize)
-                {
-                    Cursor.SetResizeTRBLCursor();
-                }
-                else
-                {
-                    Cursor.SetResizeLeftRightCursor();
-                }
-            }
-            else
-            {
-                Cursor.SetArrowCursor();
-            }
+            UpdatePointerState(eventData.position, eventData.pressPosition);
+        }
+        void IDragHandler.OnDrag(PointerEventData eventData)
+        {
+            UpdatePointerState(eventData.position, eventData.pressPosition);
         }
 
         void IPointerEnterHandler.OnPointerEnter(PointerEventData eventData)
@@ -457,7 +438,10 @@ namespace Elanetic.UI.Unity
 
         void IPointerExitHandler.OnPointerExit(PointerEventData eventData)
         {
-            Cursor.SetArrowCursor();
+            if(m_State == AdjustWindowState.None)
+            {
+                Cursor.SetArrowCursor();
+            }
         }
 
         private void FixWindowViewAlignment()
@@ -499,5 +483,11 @@ namespace Elanetic.UI.Unity
                 rectTransform.localPosition = new Vector3(rectTransform.localPosition.x,rectTransform.localPosition.y - (rectTransform.rect.y + rectTransform.rect.height - localY), rectTransform.localPosition.z);
             }
         }
+
+        void IPointerUpHandler.OnPointerUp(PointerEventData eventData)
+        {
+            EndDrag();
+        }
+
     }
 }
