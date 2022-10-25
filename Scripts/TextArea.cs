@@ -694,7 +694,203 @@ namespace Elanetic.UI.Unity
             onTargetLineChanged?.Invoke();
         }
 
-        
+        public void Append(char[] characterData, Color32[] colorData, int startIndex, int count)
+        {
+            if(startIndex < 0 || startIndex >= characterData.Length || count <= 0)
+            {
+                return;
+            }
+
+#if DEBUG
+            if(startIndex + count > characterData.Length || startIndex + count > colorData.Length)
+            {
+                throw new ArgumentOutOfRangeException(nameof(count), "Start index + count surpases the length of the inputted character data or color data");
+            }
+#endif
+
+            int sourceLength = count;
+            int newLength = sourceLength + m_RawLength;
+            if (newLength > m_RawText.Length)
+            {
+                //Resize raw char array
+                int newSize = ((newLength / 64) + 1) * 64;
+                char[] newCharArray = new char[newSize];
+                Color32[] newColorArray = new Color32[newSize];
+
+                unsafe
+                {
+                    fixed (char* destPtr = &newCharArray[0])
+                    {
+                        //Copy old char array to new char array
+                        fixed (char* srcPtr = &m_RawText[0])
+                            UnsafeUtility.MemCpy(destPtr, srcPtr, m_RawLength * 2);
+
+
+                        //Copy new text to after the old text of the char array
+                        char* appendPtr = destPtr + m_RawLength;
+                        fixed (char* srcPtr = &characterData[startIndex])
+                            UnsafeUtility.MemCpy(appendPtr, srcPtr, sourceLength * 2);
+                    }
+
+
+                    fixed (Color32* clrDestPtr = &newColorArray[0])
+                    {
+                        //Copy old color array to new color array
+                        fixed (Color32* clrSrcPtr = &m_CharacterColors[0])
+                            UnsafeUtility.MemCpy(clrDestPtr, clrSrcPtr, m_RawLength * 4);
+
+                        Color32* clrAppendPtr = clrDestPtr + m_RawLength;
+                        fixed(Color32* srcPtr = &colorData[startIndex])
+                            UnsafeUtility.MemCpy(clrAppendPtr, srcPtr, sourceLength * 4);
+
+                    }
+                }
+
+                m_RawText = newCharArray;
+                m_CharacterColors = newColorArray;
+            }
+            else
+            {
+                unsafe
+                {
+                    //Copy text memory to raw char array
+                    fixed (char* srcPtr = &characterData[startIndex])
+                    fixed (char* destPtr = &m_RawText[m_RawLength])
+                        UnsafeUtility.MemCpy(destPtr, srcPtr, sourceLength * 2);
+
+                    //Copy color over memory spread
+                    fixed(Color32* colorSrcPtr = &colorData[startIndex])
+                    fixed (Color32* colorDestPtr = &m_CharacterColors[m_RawLength])
+                    {
+                        UnsafeUtility.MemCpy(colorDestPtr, colorSrcPtr, sourceLength * 4);
+                    }
+                }
+            }
+
+            m_RawLength = newLength;
+            ParseText();
+
+            if (m_LineCount > m_VisibleLines.Length)
+            {
+                //Resize visible line array
+                int newSize = m_VisibleLines.Length;
+                while (newSize < m_LineCount) newSize *= 2;
+                Array.Resize(ref m_VisibleLines, newSize);
+            }
+
+            m_LastLineIndex = Mathf.Clamp(m_LineCount - m_MaxVisibleLineCount + 1, 0, m_LineCount - 1);
+
+            if (autoScrollToBottom)
+            {
+                m_TargetLineIndex = m_LastLineIndex;
+                m_LastPossibleVisibleIndex = m_TargetLineIndex + m_MaxVisibleLineCount - 1;
+            }
+
+            if (isActiveAndEnabled)
+                Refresh();
+            else
+                m_IsDirty = true;
+
+            onTargetLineChanged?.Invoke();
+        }
+
+        public void Append(char[] characterData, Color32 color, int startIndex, int count)
+        {
+            if(startIndex < 0 || startIndex >= characterData.Length || count < 0)
+            {
+                return;
+            }
+
+#if DEBUG
+            if(startIndex + count > characterData.Length)
+            {
+                throw new ArgumentOutOfRangeException(nameof(count), "Start index + count surpases the lenght of the inputted character data or color data");
+            }
+#endif
+
+            int sourceLength = count;
+            int newLength = sourceLength + m_RawLength;
+            if(newLength > m_RawText.Length)
+            {
+                //Resize raw char array
+                int newSize = ((newLength / 64) + 1) * 64;
+                char[] newCharArray = new char[newSize];
+                Color32[] newColorArray = new Color32[newSize];
+
+                unsafe
+                {
+                    fixed(char* destPtr = &newCharArray[0])
+                    {
+                        //Copy old char array to new char array
+                        fixed(char* srcPtr = &m_RawText[0])
+                            UnsafeUtility.MemCpy(destPtr, srcPtr, m_RawLength * 2);
+
+
+                        //Copy new text to after the old text of the char array
+                        char* appendPtr = destPtr + m_RawLength;
+                        fixed(char* srcPtr = &characterData[startIndex])
+                            UnsafeUtility.MemCpy(appendPtr, srcPtr, sourceLength * 2);
+                    }
+
+
+                    fixed(Color32* clrDestPtr = &newColorArray[0])
+                    {
+                        //Copy old color array to new color array
+                        fixed(Color32* clrSrcPtr = &m_CharacterColors[0])
+                            UnsafeUtility.MemCpy(clrDestPtr, clrSrcPtr, m_RawLength * 4);
+
+                        Color32* clrAppendPtr = clrDestPtr + m_RawLength;
+                        UnsafeUtility.MemCpyReplicate(clrAppendPtr, &color, 4, sourceLength);
+                    }
+                }
+
+                m_RawText = newCharArray;
+                m_CharacterColors = newColorArray;
+            }
+            else
+            {
+                unsafe
+                {
+                    //Copy text memory to raw char array
+                    fixed(char* srcPtr = &characterData[startIndex])
+                    fixed(char* destPtr = &m_RawText[m_RawLength])
+                        UnsafeUtility.MemCpy(destPtr, srcPtr, sourceLength * 2);
+
+                    //Copy color over memory spread
+                    fixed(Color32* colorDestPtr = &m_CharacterColors[m_RawLength])
+                    {
+                        UnsafeUtility.MemCpyReplicate(colorDestPtr, &color, 4, sourceLength);
+                    }
+                }
+            }
+
+            m_RawLength = newLength;
+            ParseText();
+
+            if(m_LineCount > m_VisibleLines.Length)
+            {
+                //Resize visible line array
+                int newSize = m_VisibleLines.Length;
+                while(newSize < m_LineCount) newSize *= 2;
+                Array.Resize(ref m_VisibleLines, newSize);
+            }
+
+            m_LastLineIndex = Mathf.Clamp(m_LineCount - m_MaxVisibleLineCount + 1, 0, m_LineCount - 1);
+
+            if(autoScrollToBottom)
+            {
+                m_TargetLineIndex = m_LastLineIndex;
+                m_LastPossibleVisibleIndex = m_TargetLineIndex + m_MaxVisibleLineCount - 1;
+            }
+
+            if(isActiveAndEnabled)
+                Refresh();
+            else
+                m_IsDirty = true;
+
+            onTargetLineChanged?.Invoke();
+        }
+
         public void RemoveText(int startIndex, int count)
         {
             if(startIndex < 0 || startIndex >= m_RawLength)
