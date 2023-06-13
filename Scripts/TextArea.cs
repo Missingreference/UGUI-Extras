@@ -2039,6 +2039,8 @@ namespace Elanetic.UI.Unity
                     }
                     else
                     {
+                        //Ensure a double click does not get registered and that we are actually dragging
+                        m_LastClickTime = -1;
                         SelectText(start, end);
                     }
                 }
@@ -2054,6 +2056,7 @@ namespace Elanetic.UI.Unity
         }
 
         private float m_LastClickTime = -1.0f;
+        private float m_LastClickIndex = -1;
 
         void IPointerDownHandler.OnPointerDown(PointerEventData eventData)
         {
@@ -2065,11 +2068,105 @@ namespace Elanetic.UI.Unity
             {
                 if (!highlightable || m_RawLength == 0) return;
 
+                //Determine start char index
+                RectTransformUtility.ScreenPointToLocalPointInRectangle(rectTransform, eventData.position, null, out Vector2 startLocalPoint);
+                int line = m_TargetLineIndex + Mathf.FloorToInt(((startLocalPoint.y - (rectTransform.rect.height * 0.5f)) / -fontSize));
+                float posX = startLocalPoint.x + (rectTransform.rect.width * 0.5f);
+
+
+                int clickCharIndex = -1;
                 if (!m_PointerIsDown && Time.realtimeSinceStartup - m_LastClickTime <= m_DoubleClickTime)
                 {
-                    OnDoubleClick(eventData.position);
-                    m_LastClickTime = -1.0f;
-                    return;
+                    if(line < 0)
+                    {
+                        clickCharIndex = 0;
+                    }
+                    else if(line >= m_LineCount)
+                    {
+                        clickCharIndex = m_RawLength - 1;
+                    }
+                    else
+                    {
+                        int startCharIndex = m_LineStartIndexs[line];
+                        int endCharIndex = startCharIndex + m_LineSizes[line] - 1;
+                        float currentLineWidth = 0.0f;
+                        for(int i = startCharIndex; i <= endCharIndex; i++)
+                        {
+                            float charWidth = GetCharWidth(m_RawText[i], currentLineWidth);
+                            if(currentLineWidth + (charWidth) >= posX)
+                            {
+                                clickCharIndex = i;
+                                break;
+                            }
+                            currentLineWidth += charWidth;
+                        }
+
+                        if(clickCharIndex < 0)
+                        {
+                            if(line == m_LineCount - 1)
+                            {
+                                clickCharIndex = endCharIndex;
+                            }
+                            else
+                            {
+                                clickCharIndex = endCharIndex + 1;
+                            }
+                        }
+                    }
+
+                    if(clickCharIndex == m_LastClickIndex)
+                    {
+
+                        OnDoubleClick(clickCharIndex);
+                        m_LastClickTime = -1;
+                        return;
+                    }
+                    else
+                    {
+                        m_LastClickIndex = clickCharIndex;
+                    }
+                }
+                else
+                {
+                    //Determine last click index for double click
+                    if(line < 0)
+                    {
+                        clickCharIndex = 0;
+                    }
+                    else if(line >= m_LineCount)
+                    {
+                        clickCharIndex = m_RawLength - 1;
+                    }
+                    else
+                    {
+                        int startCharIndex = m_LineStartIndexs[line];
+                        int endCharIndex = startCharIndex + m_LineSizes[line] - 1;
+                        float currentLineWidth = 0.0f;
+                        for(int i = startCharIndex; i <= endCharIndex; i++)
+                        {
+                            float charWidth = GetCharWidth(m_RawText[i], currentLineWidth);
+                            if(currentLineWidth + (charWidth) >= posX)
+                            {
+                                clickCharIndex = i;
+                                break;
+                            }
+                            currentLineWidth += charWidth;
+                        }
+
+                        if(clickCharIndex < 0)
+                        {
+                            if(line == m_LineCount - 1)
+                            {
+                                clickCharIndex = endCharIndex;
+                            }
+                            else
+                            {
+                                clickCharIndex = endCharIndex + 1;
+                            }
+                        }
+                    }
+
+                    m_LastClickIndex = clickCharIndex;
                 }
 
                 m_PointerIsDown = true;
@@ -2077,90 +2174,58 @@ namespace Elanetic.UI.Unity
                 m_LastClickTime = Time.realtimeSinceStartup;
 
                 DeselectText();
-                m_IsDragging = true;
-                RectTransformUtility.ScreenPointToLocalPointInRectangle(rectTransform, eventData.position, null, out Vector2 startLocalPoint);
-                m_DragStartLine = m_TargetLineIndex + Mathf.FloorToInt(((startLocalPoint.y - (rectTransform.rect.height * 0.5f)) / -fontSize));
-                m_DragStartPositionX = startLocalPoint.x + (rectTransform.rect.width * 0.5f);
-
-                //Determine start char index
-                if (m_DragStartLine < 0)
+                //Determine start drag index
+                int charIndex = -1;
+                if(line < 0)
                 {
-                    m_DragStartCharIndex = 0;
+                    charIndex = 0;
                 }
-                else if(m_DragStartLine >= m_LineCount)
+                else if(line >= m_LineCount)
                 {
-                    m_DragStartCharIndex = m_RawLength - 1;
+                    charIndex = m_RawLength - 1;
                 }
                 else
                 {
-                    m_DragStartCharIndex = -1;
-                    int startCharIndex = m_LineStartIndexs[m_DragStartLine];
-                    int endCharIndex = startCharIndex + m_LineSizes[m_DragStartLine] - 1;
+                    int startCharIndex = m_LineStartIndexs[line];
+                    int endCharIndex = startCharIndex + m_LineSizes[line] - 1;
                     float currentLineWidth = 0.0f;
-                    for (int i = startCharIndex; i <= endCharIndex; i++)
+                    for(int i = startCharIndex; i <= endCharIndex; i++)
                     {
                         float charWidth = GetCharWidth(m_RawText[i], currentLineWidth);
-                        if(currentLineWidth + (charWidth * 0.5f) >= m_DragStartPositionX)
+                        if(currentLineWidth + (charWidth * 0.5f) >= posX)
                         {
-                            m_DragStartCharIndex = i;
+                            charIndex = i;
                             break;
                         }
                         currentLineWidth += charWidth;
                     }
 
-                    if(m_DragStartCharIndex < 0)
+                    if(charIndex < 0)
                     {
-                        m_DragStartCharIndex = endCharIndex + 1;
+                        charIndex = endCharIndex + 1;
+                        /*
+                        if(line == m_LineCount - 1)
+                        {
+                            charIndex = endCharIndex;
+                        }
+                        else
+                        {
+                            charIndex = endCharIndex + 1;
+                        }
+                        */
                     }
                 }
+                m_IsDragging = true;
+                m_DragStartLine = line;
+                m_DragStartPositionX = posX;
+                m_DragStartCharIndex = charIndex;
             }
         }
 
         private int m_DragStartCharIndex = -1;
 
-        private void OnDoubleClick(Vector2 eventPosition)
+        private void OnDoubleClick(int charIndex)
         {
-            RectTransformUtility.ScreenPointToLocalPointInRectangle(rectTransform, eventPosition, null, out Vector2 startLocalPoint);
-            int line = m_TargetLineIndex + Mathf.FloorToInt(((startLocalPoint.y - (rectTransform.rect.height * 0.5f)) / -fontSize));
-            float posX = startLocalPoint.x + (rectTransform.rect.width * 0.5f);
-            int charIndex = -1;
-            if (line < 0)
-            {
-                charIndex = 0;
-            }
-            else if (line >= m_LineCount)
-            {
-                charIndex = m_RawLength - 1;
-            }
-            else
-            {
-                int startCharIndex = m_LineStartIndexs[line];
-                int endCharIndex = startCharIndex + m_LineSizes[line] - 1;
-                float currentLineWidth = 0.0f;
-                for (int i = startCharIndex; i <= endCharIndex; i++)
-                {
-                    float charWidth = GetCharWidth(m_RawText[i], currentLineWidth);
-                    if (currentLineWidth + (charWidth * 0.5f) >= posX)
-                    {
-                        charIndex = i;
-                        break;
-                    }
-                    currentLineWidth += charWidth;
-                }
-
-                if (charIndex < 0)
-                {
-                    if (line == m_LineCount - 1)
-                    {
-                        charIndex = endCharIndex;
-                    }
-                    else
-                    {
-                        charIndex = endCharIndex + 1;
-                    }
-                }
-            }
-
             char startChar = m_RawText[charIndex];
 
             if (char.IsLetterOrDigit(startChar))
