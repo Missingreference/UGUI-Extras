@@ -1265,6 +1265,18 @@ namespace Elanetic.UI.Unity
 
         private void OnScrollBarValueChanged(float value)
         {
+            //An odd occurance happens with Unity's scrolbar(and probably is a bug) where its possible to get a negative value or value that surpasses 100%.
+            if(value < 0.0f)
+            {
+                m_ScrollBar.SetValueWithoutNotify(0.0f);
+                value = 0.0f;
+            }
+            else if(value > 1.0f)
+            {
+                m_ScrollBar.SetValueWithoutNotify(1.0f);
+                value = 1.0f;
+            }
+
             float percent = 1.0f;
             if (m_LastLineIndex > 0)
                 percent = value;
